@@ -6,13 +6,13 @@ from datetime import datetime, timedelta, timezone
 import difflib
 
 # ================= 1. 설정값 (직접 수정 필요) =================
-NAVER_CLIENT_ID = "9IUC1cPit5l_aBpWbwoW" # 본인 ID 유지
-NAVER_CLIENT_SECRET = "1oTFii1FlI" # 보안을 위해 마스킹했습니다. 다시 입력해주세요!
+NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID") 
+NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 KEYWORD = "kt" 
 
 EMAIL_SENDER = "pirojung@gmail.com"  
-EMAIL_APP_PWD = "xlcmbckdbusgcxmv" # 보안을 위해 마스킹했습니다.
-EMAIL_RECEIVER = "po.jung@kt.com" 
+EMAIL_APP_PWD = os.getenv("EMAIL_APP_PWD") 
+EMAIL_RECEIVER = "po.jung@kt.com"
 
 # [추가] 제외하고 싶은 스포츠/연예 관련 키워드 목록
 # 1. 제목에 포함되면 무조건 제외할 단어들 (스포츠, 게임, 연예 일반 용어 추가)
