@@ -3,7 +3,7 @@ name: Daily KT News Agent
 on:
   schedule:
     # 한국 시간(KST) 아침 8시 = 협정 세계시(UTC) 밤 11시
-    - cron: '15 07 * * *'
+    - cron: '15 23 * * *'
   workflow_dispatch: # 수동 실행 버튼 활성화
 
 jobs:
