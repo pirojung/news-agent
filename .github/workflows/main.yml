@@ -2,10 +2,9 @@ name: Daily KT News Agent
 
 on:
   schedule:
-    # 한국 시간(KST) 아침 8시 = 협정 세계시(UTC) 밤 11시
-    - cron: '15 23 * * *'
-  workflow_dispatch: # 수동 실행 버튼 활성화
-
+    - cron: '*/5 * * * *'  # [테스트용] 5분마다 무조건 실행
+  workflow_dispatch:
+  
 jobs:
   run-news-agent:
     runs-on: ubuntu-latest # 우분투 리눅스 서버 대여
