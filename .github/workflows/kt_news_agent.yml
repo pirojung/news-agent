@@ -1,15 +1,9 @@
 name: Daily KT News Agent
 
 on:
-  push:      # [추가] 코드를 수정해서 올릴 때마다 즉시 실행됨 (강제 기상용)
   schedule:
-    - cron: '*/5 * * * *'  # 5분마다 실행 (테스트용)
-  workflow_dispatch:       # 수동 실행용
-  
-#on:
-#  schedule:
-#    - cron: '15 10 * * *'
-#  workflow_dispatch:
+    - cron: '0 * * * *'  # 매시간 0분 (1시 0분, 2시 0분, 3시 0분...)
+  workflow_dispatch:
   
 jobs:
   run-news-agent:
