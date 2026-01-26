@@ -2,7 +2,7 @@ name: Daily KT News Agent
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # [테스트용] 5분마다 무조건 실행
+    - cron: '15 07 * * *'
   workflow_dispatch:
   
 jobs:
