@@ -15,21 +15,39 @@ EMAIL_SENDER = "pirojung@gmail.com"
 EMAIL_APP_PWD = os.getenv("EMAIL_APP_PWD") 
 EMAIL_RECEIVER = "po.jung@kt.com"
 
-# [추가] 제외하고 싶은 스포츠/연예 관련 키워드 목록
-# 1. 제목에 포함되면 무조건 제외할 단어들 (스포츠, 게임, 연예 일반 용어 추가)
+# [기존] 제외 키워드 및 사이트
 EXCLUDE_KEYWORDS = [
-    "위즈", "소닉붐", "롤스터", "LCK", "e스포츠", "T1", "젠지", "디플러스", # KT 스포츠단 및 e스포츠
-    "야구", "농구", "축구", "프로농구", "KBO", "KBL", # 종목
-    "연승", "연패", "감독", "선수", "득점", "홈런", "역전", "더비", # 스포츠 용어
-    "연예", "방송", "드라마", "예능", "시청률", "출연", "가수", "배우", "아이돌", "Genie" # 연예 용어
+    "위즈", "소닉붐", "롤스터", "LCK", "e스포츠", "T1", "젠지", "디플러스",
+    "야구", "농구", "축구", "프로농구", "KBO", "KBL",
+    "연승", "연패", "감독", "선수", "득점", "홈런", "역전", "더비",
+    "연예", "방송", "드라마", "예능", "시청률", "출연", "가수", "배우", "아이돌", "Genie"
 ]
 
-# 2. URL에 포함되면 무조건 제외할 도메인 (스포츠/연예/게임 전문 매체)
 EXCLUDE_SITES = [
-    "sports", "entertain", "basketkorea", "jumpball", "rookie", # 스포츠/농구
-    "inven", "fomos", "game", "thisisgame", # 게임/e스포츠
-    "spotv", "xports", "osen", "stardaily", "joynews", "tvreport" # 스포츠/연예 전문지
+    "sports", "entertain", "basketkorea", "jumpball", "rookie",
+    "inven", "fomos", "game", "thisisgame",
+    "spotv", "xports", "osen", "stardaily", "joynews", "tvreport"
 ]
+
+# [신규] 4가지 유형별 분류 키워드
+CATEGORY_KEYWORDS = {
+    "1. IT/AI 동향 기사": [
+        "AI", "인공지능", "LLM", "AX", "클라우드", "Cloud", "빅데이터", "IDC", 
+        "5G", "6G", "로봇", "자율주행", "디지털 전환", "DX", "양자암호", "초거대"
+    ],
+    "2. CEO/경영/인사 관련 기사": [
+        "박윤영", "김영섭", "대표", "CEO", "사장", "임원", "인사", "조직개편", 
+        "경영", "주주", "배당", "실적", "영업이익", "이사회", "노조", "단체협약"
+    ],
+    "3. 신상품/서비스 출시 기사": [
+        "출시", "신상품", "요금제", "프로모션", "신규", "서비스", "오픈", 
+        "이벤트", "가입자", "OTT", "스마트폰", "갤럭시", "아이폰"
+    ],
+    "4. 정부규제/컴플라이언스 기사": [
+        "방통위", "방송통신위원회", "공정위", "과기정통부", "국감", "국정감사", 
+        "규제", "과징금", "소송", "재판", "조사", "단통법", "망사용료", "통신비", "위반"
+    ]
+}
 
 # ============================================================
 
@@ -44,14 +62,22 @@ def get_filtered_news():
     response = requests.get(url, headers=headers, params=params, verify=False)
     
     if response.status_code != 200:
-        return []
+        return {}
 
     data = response.json()
     now = datetime.now(timezone(timedelta(hours=9)))
     time_limit = now - timedelta(hours=24)
     
-    recent_news = []
     accepted_titles = []
+    
+    # [수정] 결과를 저장할 그룹핑 딕셔너리 초기화
+    grouped_news = {
+        "1. IT/AI 동향 기사": [],
+        "2. CEO/경영/인사 관련 기사": [],
+        "3. 신상품/서비스 출시 기사": [],
+        "4. 정부규제/컴플라이언스 기사": [],
+        "5. 기타 KT 관련 기사": []
+    }
 
     for item in data['items']:
         pub_date = datetime.strptime(item['pubDate'], "%a, %d %b %Y %H:%M:%S %z")
@@ -61,20 +87,17 @@ def get_filtered_news():
         clean_title = item['title'].replace('<b>', '').replace('</b>', '').replace('&quot;', '"').strip()
         link = item['originallink'] or item['link']
 
-        # [수정 2] URL 도메인 및 강화된 키워드 필터링 동시 적용
+        # 1. 제외 필터링 (기존 유지)
         is_unwanted = False
-        
-        # 1. 사이트 검사: EXCLUDE_SITES 목록에 있는 단어가 URL에 포함되어 있는가?
         if any(site in link.lower() for site in EXCLUDE_SITES):
             is_unwanted = True
-        # 2. 제목 검사: EXCLUDE_KEYWORDS 목록의 단어가 제목에 포함되어 있는가?
         elif any(kw in clean_title for kw in EXCLUDE_KEYWORDS):
             is_unwanted = True
             
         if is_unwanted:
-            continue # 스포츠/연예 기사 패스
+            continue 
         
-        # 중복 기사 제외
+        # 2. 중복 기사 제외 (기존 유지)
         is_duplicate = False
         for existing_title in accepted_titles:
             if is_similar(clean_title, existing_title) > 0.65:
@@ -83,33 +106,60 @@ def get_filtered_news():
         
         if not is_duplicate:
             item['clean_title'] = clean_title 
-            recent_news.append(item)
             accepted_titles.append(clean_title)
+            
+            # [신규] 3. 기사 카테고리 분류 로직
+            # 제목과 본문 요약을 모두 검색하여 정확도 향상
+            search_text = clean_title + " " + item['description']
+            assigned_category = "5. 기타 KT 관련 기사" # 기본값
+            
+            for category, keywords in CATEGORY_KEYWORDS.items():
+                if any(kw in search_text for kw in keywords):
+                    assigned_category = category
+                    break # 가장 먼저 매칭되는 카테고리에 할당
+            
+            grouped_news[assigned_category].append(item)
 
-    return recent_news
+    return grouped_news
 
-def send_email(news_list):
-    if not news_list:
+def send_email(grouped_news):
+    # 전체 뉴스 개수 계산
+    total_news_count = sum(len(news_list) for news_list in grouped_news.values())
+    
+    if total_news_count == 0:
         print("새로운 뉴스가 없어 메일을 발송하지 않습니다.")
         return
 
-    subject = f"[NewsAgent] 오늘의 '{KEYWORD}' IT/비즈 핵심 뉴스 ({len(news_list)}건)"
+    subject = f"[NewsAgent] 오늘의 '{KEYWORD}' 핵심 뉴스 브리핑 ({total_news_count}건)"
+    
+    # 이메일 헤더 생성
     html_content = f"""
     <html>
-    <body>
-        <h2>📰 [{KEYWORD}] 24시간 IT/비즈 핵심 뉴스 브리핑</h2>
-        <p style="color:gray;">스포츠 및 연예 기사와 중복이 제거된 최신 뉴스 {len(news_list)}건입니다.</p>
-        <hr>
-        <ul>
+    <body style="font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+        <h2 style="color: #003366;">📰 [{KEYWORD}] 24시간 핵심 뉴스 브리핑</h2>
+        <p style="color:gray;">분류된 최신 뉴스 총 <b>{total_news_count}건</b>입니다.</p>
+        <hr style="border: 1px solid #ddd;">
     """
     
-    for item in news_list[:len(news_list)]: 
-        link = item['originallink'] or item['link']
-        desc = item['description'].replace('<b>', '').replace('</b>', '')
-        html_content += f"<li><b><a href='{link}' target='_blank' style='text-decoration:none; color:#1a0dab; font-size:16px;'>{item['clean_title']}</a></b><br>"
-        html_content += f"<span style='font-size:13px; color:#555;'>{desc}...</span><br><br></li>"
+    # [수정] 카테고리별로 순회하며 HTML 생성
+    for category, news_list in grouped_news.items():
+        if not news_list: # 해당 카테고리에 뉴스가 없으면 건너뜀
+            continue
+            
+        # 카테고리 제목
+        html_content += f"<h3 style='color: #008080; margin-top: 25px;'>📌 {category} ({len(news_list)}건)</h3>"
+        html_content += "<ul style='margin-bottom: 20px;'>"
+        
+        # 해당 카테고리 내 뉴스 리스트
+        for item in news_list: 
+            link = item['originallink'] or item['link']
+            desc = item['description'].replace('<b>', '').replace('</b>', '')
+            html_content += f"<li style='margin-bottom: 15px;'><b><a href='{link}' target='_blank' style='text-decoration:none; color:#1a0dab; font-size:16px;'>{item['clean_title']}</a></b><br>"
+            html_content += f"<span style='font-size:13px; color:#555;'>{desc}...</span></li>"
+        
+        html_content += "</ul>"
 
-    html_content += "</ul></body></html>"
+    html_content += "</body></html>"
 
     msg = MIMEMultipart()
     msg['From'] = EMAIL_SENDER
@@ -126,6 +176,6 @@ def send_email(news_list):
         print(f"❌ 이메일 발송 실패: {e}")
 
 if __name__ == "__main__":
-    print("뉴스 수집 및 필터링 중...")
-    news = get_filtered_news()
-    send_email(news)
+    print("뉴스 수집, 필터링 및 분류 중...")
+    grouped_news = get_filtered_news()
+    send_email(grouped_news)
