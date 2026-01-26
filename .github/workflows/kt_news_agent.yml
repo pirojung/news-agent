@@ -2,7 +2,7 @@ name: Daily KT News Agent
 
 on:
   schedule:
-    - cron: '15 07 * * *'
+    - cron: '57 7 * * *'
   workflow_dispatch:
   
 jobs:
