@@ -27,4 +27,4 @@ jobs:
       - name: Run news script
         env:
           EMAIL_APP_PWD: ${{ secrets.EMAIL_APP_PWD }} # Secret 설정 확인
-        run: python your_script_name.py # 실제 파이썬 파일명으로 수정
+        run: python piro_news_agent.py # 실제 파이썬 파일명으로 수정
